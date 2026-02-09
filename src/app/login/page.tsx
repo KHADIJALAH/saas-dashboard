@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
@@ -11,6 +10,13 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import toast from 'react-hot-toast'
+
+// Demo users
+const demoUsers = [
+  { email: 'admin@demo.com', password: 'admin123', name: 'Admin User', role: 'admin' },
+  { email: 'manager@demo.com', password: 'manager123', name: 'Manager User', role: 'manager' },
+  { email: 'user@demo.com', password: 'user123', name: 'Regular User', role: 'user' },
+]
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,28 +31,31 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    try {
-      const result = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
+    // Check demo credentials
+    const user = demoUsers.find(
+      u => u.email === formData.email && u.password === formData.password
+    )
 
-      if (result?.error) {
-        toast.error(result.error)
-      } else {
-        toast.success('Welcome back!')
-        router.push('/dashboard')
-      }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.')
-    } finally {
-      setIsLoading(false)
+    if (user) {
+      // Save to localStorage
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('isAuthenticated', 'true')
+      toast.success(`Welcome back, ${user.name}!`)
+      router.push('/dashboard')
+    } else {
+      toast.error('Invalid email or password')
     }
+
+    setIsLoading(false)
   }
 
   const handleOAuthSignIn = (provider: string) => {
-    signIn(provider, { callbackUrl: '/dashboard' })
+    // Demo OAuth - just login as admin
+    const user = demoUsers[0]
+    localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('isAuthenticated', 'true')
+    toast.success(`Welcome, ${user.name}!`)
+    router.push('/dashboard')
   }
 
   return (

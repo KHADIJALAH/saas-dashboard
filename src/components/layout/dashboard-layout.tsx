@@ -1,7 +1,7 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { useThemeStore } from '@/store/theme-store'
@@ -11,10 +11,22 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { data: session, status } = useSession()
+  const router = useRouter()
   const { sidebarCollapsed } = useThemeStore()
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  if (status === 'loading') {
+  useEffect(() => {
+    const auth = localStorage.getItem('isAuthenticated')
+    if (auth === 'true') {
+      setIsAuthenticated(true)
+    } else {
+      router.push('/login')
+    }
+    setIsLoading(false)
+  }, [router])
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg">
         <div className="flex flex-col items-center gap-4">
@@ -25,8 +37,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     )
   }
 
-  if (!session) {
-    redirect('/login')
+  if (!isAuthenticated) {
+    return null
   }
 
   return (

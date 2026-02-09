@@ -1,20 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { FiSearch, FiBell, FiSun, FiMoon, FiUser, FiSettings, FiLogOut } from 'react-icons/fi'
-import { motion } from 'framer-motion'
 import { useThemeStore } from '@/store/theme-store'
 import { useNotificationStore } from '@/store/notification-store'
 import { Avatar } from '@/components/ui/avatar'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/dropdown'
-import { Badge } from '@/components/ui/badge'
 import { getRelativeTime } from '@/lib/utils'
-import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 
+interface User {
+  name: string
+  email: string
+  role: string
+}
+
 export function Header() {
-  const { data: session } = useSession()
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    }
+  }, [])
   const { theme, toggleTheme, sidebarCollapsed } = useThemeStore()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationStore()
   const [showNotifications, setShowNotifications] = useState(false)
@@ -149,16 +160,15 @@ export function Header() {
               className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <Avatar
-                src={session?.user?.image || undefined}
-                name={session?.user?.name || 'User'}
+                name={user?.name || 'User'}
                 size="sm"
               />
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {session?.user?.name || 'User'}
+                  {user?.name || 'User'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {(session?.user as any)?.role || 'User'}
+                  {user?.role || 'User'}
                 </p>
               </div>
             </button>
@@ -166,10 +176,10 @@ export function Header() {
         >
           <div className="p-3 border-b border-gray-200 dark:border-dark-border">
             <p className="font-medium text-gray-900 dark:text-white">
-              {session?.user?.name}
+              {user?.name}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {session?.user?.email}
+              {user?.email}
             </p>
           </div>
           <div className="py-1">
@@ -191,7 +201,11 @@ export function Header() {
             <DropdownItem
               icon={<FiLogOut />}
               danger
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={() => {
+                localStorage.removeItem('user')
+                localStorage.removeItem('isAuthenticated')
+                router.push('/login')
+              }}
             >
               Logout
             </DropdownItem>
